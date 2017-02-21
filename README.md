@@ -61,7 +61,8 @@ Too much of basic now, now let's really walk through the script
 
 ## Script walk through
 
-``` echo "-----------------Variables---------------------------------"
+``` 
+echo "-----------------Variables---------------------------------"
 echo "DEPLOYMENT_SOURCE = %DEPLOYMENT_SOURCE%"
 echo "DEPLOYMENT_TARGET = %DEPLOYMENT_TARGET%"
 echo "NEXT_MANIFEST_PATH = %NEXT_MANIFEST_PATH%"
@@ -90,6 +91,7 @@ IF EXIST "%DEPLOYMENT_SOURCE%\package.json" (
 )
 echo =======  Installing npm dev packages: Finished at %TIME% ======= 
 ```
+
 Intalling dev dependancy packages defined in `package.json` which will be required for building and running gulp task. The `--only=dev` says to install only those packages which are defined in `devDependancies` only.
 Also notice that it is searching package.json in DEPLOYMENT_SOURCE folder not in DEPLOYMENT_TARGET folder which you will find in the default script.
 
@@ -105,6 +107,7 @@ IF EXIST "%DEPLOYMENT_SOURCE%\bower.json" (
  )
 echo =======  Installing bower: Finished at %TIME% ======= 
 ```
+
 Once dev dependancies are installed, run `bower install` through script indie DEPLOYMENT_SOURCE folder.
 
 ```
@@ -150,7 +153,8 @@ Let's slow down a little bit and summarise what we have done till this point and
 
 Let's restore it
 
-```:: 6. Install npm packages at DEPLOYMENT_TARGET 
+```
+:: 6. Install npm packages at DEPLOYMENT_TARGET 
 echo =======  Installing npm packages: Starting at %TIME% ======= 
 IF EXIST "%DEPLOYMENT_TARGET%\package.json" (
   pushd "%DEPLOYMENT_TARGET%"
