@@ -38,16 +38,6 @@ IF NOT DEFINED NEXT_MANIFEST_PATH (
   )
 )
 
-echo "-----------------Variables---------------------------------"
-echo "DEPLOYMENT_SOURCE = %DEPLOYMENT_SOURCE%"
-echo "DEPLOYMENT_TARGET = %DEPLOYMENT_TARGET%"
-echo "NEXT_MANIFEST_PATH = %NEXT_MANIFEST_PATH%"
-echo "PREVIOUS_MANIFEST_PATH = %PREVIOUS_MANIFEST_PATH%"
-echo "KUDU_SYNC_CMD = %appdata%\npm\kuduSync.cmd"
-echo "-----------------Variables END ---------------------------------"
-echo ""
-echo ""
-
 IF NOT DEFINED KUDU_SYNC_CMD (
   :: Install kudu sync
   echo Installing Kudu Sync
@@ -57,6 +47,16 @@ IF NOT DEFINED KUDU_SYNC_CMD (
   :: Locally just running "kuduSync" would also work
   SET KUDU_SYNC_CMD=%appdata%\npm\kuduSync.cmd
 )
+
+echo "-----------------Variables---------------------------------"
+echo "DEPLOYMENT_SOURCE = %DEPLOYMENT_SOURCE%"
+echo "DEPLOYMENT_TARGET = %DEPLOYMENT_TARGET%"
+echo "NEXT_MANIFEST_PATH = %NEXT_MANIFEST_PATH%"
+echo "PREVIOUS_MANIFEST_PATH = %PREVIOUS_MANIFEST_PATH%"
+echo "KUDU_SYNC_CMD = %appdata%\npm\kuduSync.cmd"
+echo "-----------------Variables END ---------------------------------"
+echo ""
+echo ""
 
 goto Deployment
 
@@ -103,18 +103,18 @@ echo Handling node.js deployment.
 call :SelectNodeVersion
 
 
-:: 2. Install npm devDependancy packages
+:: 2. Install npm devDependancy packages with explicit flag --only=dev at DEPLOYMENT_SOURCE instead of DEPLOYMENT_TARGET
 echo =======  Installing npm  devDependancy packages: Starting at %TIME% ======= 
 IF EXIST "%DEPLOYMENT_SOURCE%\package.json" (
   pushd "%DEPLOYMENT_SOURCE%"
-  call :ExecuteCmd !NPM_CMD! install
+  call :ExecuteCmd !NPM_CMD! install --only=dev
   IF !ERRORLEVEL! NEQ 0 goto error
   popd
 )
 echo =======  Installing npm dev packages: Finished at %TIME% ======= 
 
 
-:: 3. Install bower packages
+:: 3. Install bower packages at DEPLOYMENT_SOURCE instead of DEPLOYMENT_TARGET
 echo =======  Installing bower: Starting at %TIME% ======= 
 IF EXIST "%DEPLOYMENT_SOURCE%\bower.json" (
  pushd "%DEPLOYMENT_SOURCE%"
@@ -126,12 +126,13 @@ echo =======  Installing bower: Finished at %TIME% =======
 
 
 
-:: 4 Execute Gulp
+:: 4 Execute Gulp tasks at DEPLOYMENT_SOURCE instead of DEPLOYMENT_TARGET
 echo =======  Executing gulp task release: Starting at %TIME% ======= 
 IF EXIST "%DEPLOYMENT_SOURCE%\gulpfile.js" (
   pushd "%DEPLOYMENT_SOURCE%"
   echo "Building web site using Gulp" 
   ::call :ExecuteCmd !GULP_CMD! release-uncompress
+  call :ExecuteCmd ".\node_modules\.bin\gulp.cmd" build --env prod
   call :ExecuteCmd ".\node_modules\.bin\gulp.cmd" release
   
   IF !ERRORLEVEL! NEQ 0 goto error
@@ -141,13 +142,25 @@ echo =======  Executing Gulp task release: Finished at %TIME% =======
 
 
 
-:: 5. KuduSync
+:: 5. Do KuduSync BEFORE INSTALLING PRODUCTION DEPENDANCIES
 echo ======= Kudu Syncing: Starting at %TIME% ======= 
 IF /I "%IN_PLACE_DEPLOYMENT%" NEQ "1" (
-  call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%DEPLOYMENT_SOURCE%" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.vscode;node_modules;src;typings;.bowerrc;.deployment;.gitignore;bower.json;deploy.cmd;gulpfile.js;tsconfig.json;tsd.json;.hg;.deployment;deploy.cmd;*.xml;*.ym*"
+  call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%DEPLOYMENT_SOURCE%" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.vscode;node_modules;src;typings;.bowerrc;.deployment;.gitignore;bower.json;deploy.cmd;gulpfile.js;tsconfig.json;tsd.json;.hg;.deployment;deploy.cmd;*.xml;*.yml"
   IF !ERRORLEVEL! NEQ 0 goto error
 )
 echo ======= Kudu Syncing: Finished at %TIME% ======= 
+
+
+
+:: 6. Install npm packages at DEPLOYMENT_TARGET 
+echo =======  Installing npm packages: Starting at %TIME% ======= 
+IF EXIST "%DEPLOYMENT_TARGET%\package.json" (
+  pushd "%DEPLOYMENT_TARGET%"
+  call :ExecuteCmd !NPM_CMD! install --production
+  IF !ERRORLEVEL! NEQ 0 goto error
+  popd
+)
+echo =======  Installing npm packages: Finished at %TIME% ======= 
 
 
 
@@ -165,6 +178,7 @@ exit /b %ERRORLEVEL%
 :error
 endlocal
 echo An error has occurred during web site deployment.
+::echo Press any key to exit.
 ::pause
 call :exitSetErrorLevel
 call :exitFromFunction 2>nul
