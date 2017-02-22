@@ -1,4 +1,4 @@
-# Custom Continuous Deployment Script for Azure
+# Custom Continuous Deployment Script(Kudu) for Nodejs app on Azure
 
 ## A little History
 * I have a `node.js` application
