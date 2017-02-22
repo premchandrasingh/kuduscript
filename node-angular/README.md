@@ -92,7 +92,7 @@ IF EXIST "%DEPLOYMENT_SOURCE%\package.json" (
 echo =======  Installing npm dev packages: Finished at %TIME% ======= 
 ```
 
-Intalling dev dependancy packages defined in `package.json` which will be required for building and running gulp task. The `--only=dev` says to install only those packages which are defined in `devDependancies` only.
+Intalling dev dependancy packages defined in `package.json` which will be required for building and running gulp task. The `--only=dev` says to install only those packages which are defined in `devDependancies` only. See related [issue](https://github.com/projectkudu/kudu/issues/2239) in kudu project.
 Also notice that it is searching package.json in DEPLOYMENT_SOURCE folder not in DEPLOYMENT_TARGET folder which you will find in the default script.
 
 
